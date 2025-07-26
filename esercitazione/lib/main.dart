@@ -1,5 +1,4 @@
-import 'dart:developer';
-
+import 'package:esercitazione/widgets/numeric_pad.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -15,7 +14,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        // colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        primarySwatch: Colors.deepPurple,
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
@@ -49,10 +49,13 @@ class _MyHomePageState extends State<MyHomePage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("PIN corretto!")));
-      setState(() {
-        isValid = true;
-        pin = null;
-      });
+
+      if (!isValid) {
+        setState(() {
+          isValid = true;
+          pin = null;
+        });
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -60,9 +63,11 @@ class _MyHomePageState extends State<MyHomePage> {
           duration: const Duration(seconds: 1),
         ),
       );
-      setState(() {
-        isValid = false;
-      });
+      if (isValid) {
+        setState(() {
+          isValid = false;
+        });
+      }
     }
   }
 
@@ -86,100 +91,76 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
       body: Center(
-        child: Visibility(
-          replacement: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(fontSize: 24, color: Colors.black),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: !isValid
+              ? Column(
+                  key: const ValueKey('form'),
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const TextSpan(text: 'PIN corretto '),
-                    WidgetSpan(
-                      alignment: PlaceholderAlignment.middle,
-                      child: Icon(
-                        Icons.verified,
-                        size: 24,
-                        color: Colors.lightGreen,
+                    Text(
+                      "Login: ${pin ?? ""}",
+                      style: const TextStyle(fontSize: 24, color: Colors.black),
+                    ),
+                    NumericPad(onPress: onPress),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: onDeleteLastDigit,
+                          label: Icon(Icons.backspace),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              pin = null;
+                            });
+                          },
+                          child: Text("CANCELLA"),
+                        ),
+                        ElevatedButton(
+                          onPressed: pin != null && pin!.isNotEmpty
+                              ? validate
+                              : null,
+                          child: Text("Invia"),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                )
+              : Column(
+                  key: const ValueKey('valid'),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          fontSize: 24,
+                          color: Colors.black,
+                        ),
+                        children: [
+                          const TextSpan(text: 'PIN corretto '),
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Icon(
+                              Icons.verified,
+                              size: 24,
+                              color: Colors.lightGreen,
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: logout,
+                      child: const Text("Indietro"),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(onPressed: logout, child: const Text("Indietro")),
-            ],
-          ),
-          visible: !isValid,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "Login: ${pin ?? ""}",
-                style: const TextStyle(fontSize: 24, color: Colors.black),
-              ),
-              Container(
-                margin: const EdgeInsets.all(20.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8.0),
-                  color: const Color.fromARGB(174, 91, 65, 126),
-                ),
-                child: GridView(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    childAspectRatio: 1,
-                  ),
-                  children: List.generate(9, (index) {
-                    final int numero = index + 1;
-                    return Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: TextButton(
-                        onPressed: () {
-                          onPress(numero.toString());
-                        },
-                        style: TextButton.styleFrom(
-                          // backgroundColor: Colors.blue,
-                          shape: OvalBorder(
-                            side: BorderSide(color: Colors.white, width: 2),
-                          ),
-                        ),
-                        child: Text(
-                          "$numero",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: onDeleteLastDigit,
-                    label: Icon(Icons.backspace),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        pin = null;
-                      });
-                    },
-                    child: Text("CANCELLA"),
-                  ),
-                  ElevatedButton(onPressed: validate, child: Text("Invia")),
-                ],
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
         ),
       ),
     );
